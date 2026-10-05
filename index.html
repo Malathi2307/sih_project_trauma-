@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7f5">
+  <title>TraumaSense AI — Support dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202923;
+      --muted: #77817a;
+      --line: #e8ebe6;
+      --paper: #fff;
+      --canvas: #f7f8f6;
+      --green: #246b4c;
+      --green-dark: #174d36;
+      --mint: #eaf4ee;
+      --orange: #a75b1e;
+      --orange-bg: #fff2e5;
+      --red: #a83c3c;
+      --red-bg: #fff0ed;
+      --blue: #376b9a;
+      --blue-bg: #edf4fb;
+      --shadow: 0 3px 12px rgba(26, 42, 32, .045);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); font-size: 14px; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 242px minmax(0, 1fr); }
+    .sidebar { background: #fff; border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: 25px 16px 18px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 30px; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 11px; background: var(--green); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 17px; }
+    .brand-name { font-weight: 750; letter-spacing: -.35px; font-size: 15px; }
+    .brand-sub { color: var(--muted); font-size: 10px; margin-top: 3px; }
+    .nav-label { color: #9aa29c; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 0 12px; margin: 3px 0 10px; text-transform: uppercase; }
+    .nav { display: grid; gap: 4px; }
+    .nav button { color: #66716a; border: 0; background: transparent; border-radius: 8px; padding: 11px 12px; text-align: left; display: flex; gap: 12px; align-items: center; font-weight: 560; }
+    .nav button:hover, .nav button.active { color: var(--green-dark); background: var(--mint); }
+    .nav-icon { width: 17px; text-align: center; font-size: 15px; }
+    .nav-count { margin-left: auto; color: var(--orange); font-size: 11px; font-weight: 700; }
+    .sidebar-bottom { margin-top: auto; }
+    .privacy-box { background: #f4f7f4; padding: 13px; border-radius: 10px; margin: 15px 4px; }
+    .privacy-title { color: var(--green-dark); font-size: 11px; font-weight: 700; margin-bottom: 5px; }
+    .privacy-copy { color: var(--muted); font-size: 10px; line-height: 1.55; }
+    .user { display: flex; align-items: center; gap: 10px; padding: 12px 8px 0; border-top: 1px solid var(--line); }
+    .avatar { display: grid; place-items: center; border-radius: 50%; width: 34px; height: 34px; background: #e6ede8; color: var(--green-dark); font-weight: 700; font-size: 12px; }
+    .user-name { font-weight: 650; font-size: 12px; }
+    .user-role { color: var(--muted); font-size: 10px; margin-top: 3px; }
+    main { min-width: 0; }
+    .topbar { height: 70px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding: 0 36px; background: rgba(255,255,255,.78); }
+    .crumb { color: var(--muted); font-size: 12px; }
+    .crumb strong { color: var(--ink); font-weight: 650; }
+    .top-actions { display: flex; gap: 18px; align-items: center; }
+    .demo-tag { background: #fff4df; color: #96621d; border-radius: 20px; padding: 6px 10px; font-size: 10px; font-weight: 750; letter-spacing: .25px; }
+    .icon-btn { border: 1px solid var(--line); background: white; border-radius: 8px; width: 34px; height: 34px; color: #68736c; }
+    .content { max-width: 1440px; margin: auto; padding: 31px 36px 50px; }
+    .welcome { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 23px; }
+    h1 { font-size: 25px; letter-spacing: -.8px; margin: 0 0 7px; }
+    .subtitle { color: var(--muted); font-size: 12px; }
+    .primary { color: #fff; background: var(--green); border: 1px solid var(--green); border-radius: 8px; padding: 10px 15px; font-weight: 650; font-size: 12px; box-shadow: 0 2px 4px #246b4c20; }
+    .primary:hover { background: var(--green-dark); }
+    .secondary { color: #46534b; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 9px 13px; font-size: 12px; font-weight: 600; }
+    .secondary:hover { border-color: #b8c9bd; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 21px; }
+    .stat, .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 11px; box-shadow: var(--shadow); }
+    .stat { padding: 16px 17px; min-height: 104px; }
+    .stat-head { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 11px; }
+    .stat-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: #f3f6f3; color: var(--green); }
+    .stat-value { font-size: 25px; font-weight: 740; letter-spacing: -.8px; margin-top: 8px; }
+    .stat-note { color: var(--muted); font-size: 10px; margin-top: 3px; }
+    .stat-note .up { color: var(--green); font-weight: 650; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(270px, .83fr); gap: 17px; align-items: start; }
+    .panel { overflow: hidden; }
+    .panel-head { padding: 17px 18px 13px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .panel-title { font-size: 13px; font-weight: 720; letter-spacing: -.15px; }
+    .panel-desc { color: var(--muted); font-size: 10px; margin-top: 4px; }
+    .filters { display: flex; gap: 8px; padding: 0 18px 14px; }
+    .search { position: relative; flex: 1; }
+    .search input { height: 33px; border: 1px solid var(--line); border-radius: 7px; padding: 0 10px 0 30px; width: 100%; outline: none; font-size: 11px; }
+    .search input:focus, select:focus, textarea:focus, input:focus { border-color: #72a188; box-shadow: 0 0 0 3px #246b4c13; outline: none; }
+    .search span { position: absolute; left: 10px; top: 8px; color: #909a93; }
+    .filters select { border: 1px solid var(--line); background: white; color: #626e66; border-radius: 7px; padding: 0 9px; font-size: 11px; }
+    .case-list { border-top: 1px solid var(--line); }
+    .case { display: grid; grid-template-columns: minmax(145px, 1.2fr) .7fr .64fr .75fr 30px; gap: 10px; align-items: center; padding: 13px 18px; border-bottom: 1px solid #eff1ee; cursor: pointer; }
+    .case:hover, .case.selected { background: #f8fbf8; }
+    .case:last-child { border-bottom: 0; }
+    .case-name { font-weight: 650; font-size: 11px; }
+    .case-id { font-size: 9px; color: var(--muted); margin-top: 4px; }
+    .case-meta { color: #657169; font-size: 10px; line-height: 1.5; }
+    .case-meta small { display: block; color: #9aa39d; font-size: 9px; }
+    .risk { display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 20px; width: fit-content; font-size: 9px; font-weight: 700; white-space: nowrap; }
+    .risk:before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .risk-critical { color: var(--red); background: var(--red-bg); }
+    .risk-high { color: var(--orange); background: var(--orange-bg); }
+    .risk-moderate { color: #967322; background: #faf5df; }
+    .risk-low { color: var(--green); background: var(--mint); }
+    .score { color: #37443b; font-weight: 700; font-size: 11px; }
+    .dots { color: #9aa39d; border: 0; background: transparent; font-size: 18px; }
+    .right-col { display: grid; gap: 15px; }
+    .selected-card { padding: 0 17px 17px; }
+    .selected-person { display: flex; align-items: center; gap: 10px; padding: 7px 0 15px; border-bottom: 1px solid var(--line); }
+    .selected-person .avatar { width: 38px; height: 38px; }
+    .person-label { color: var(--muted); font-size: 9px; margin-top: 4px; }
+    .person-details { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 10px; padding: 14px 0; }
+    .detail-label { color: #98a19a; text-transform: uppercase; letter-spacing: .55px; font-size: 8px; margin-bottom: 5px; }
+    .detail-value { color: #3d4941; font-size: 10px; font-weight: 620; }
+    .risk-summary { padding: 12px; border-radius: 8px; background: #fff8f3; border: 1px solid #f7e8d9; }
+    .risk-summary-title { font-size: 10px; font-weight: 700; color: #714820; display: flex; justify-content: space-between; }
+    .risk-summary p { font-size: 10px; line-height: 1.55; color: #826b55; margin: 7px 0 0; }
+    .actions { padding: 0 17px 17px; }
+    .action-row { display: flex; gap: 9px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #f0f2ef; }
+    .action-row:last-child { border-bottom: 0; }
+    .action-check { width: 16px; height: 16px; border: 1px solid #c5d1c8; border-radius: 5px; background: #fff; margin-top: 1px; accent-color: var(--green); flex: 0 0 auto; }
+    .action-title { font-size: 10px; font-weight: 650; }
+    .action-note { color: var(--muted); font-size: 9px; margin-top: 3px; line-height: 1.4; }
+    .action-priority { color: var(--red); font-size: 8px; font-weight: 700; margin-left: auto; }
+    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 16px; }
+    .channel-list { padding: 0 18px 15px; display: grid; gap: 13px; }
+    .channel { display: grid; grid-template-columns: 85px 1fr 32px; gap: 10px; align-items: center; font-size: 10px; color: #657169; }
+    .bar { height: 6px; border-radius: 8px; background: #eef1ee; overflow: hidden; }
+    .bar span { display: block; height: 100%; border-radius: inherit; background: #78a58a; }
+    .channel b { color: #46534b; text-align: right; font-size: 10px; }
+    .notice-list { padding: 0 17px 8px; }
+    .notice { display: flex; gap: 10px; padding: 9px 0; align-items: flex-start; }
+    .notice-mark { width: 7px; height: 7px; border-radius: 50%; background: #d17d34; margin: 4px 1px 0; flex: 0 0 auto; }
+    .notice-text { font-size: 10px; line-height: 1.45; color: #4f5b53; }
+    .notice-time { color: #9aa39d; font-size: 9px; margin-top: 3px; }
+    .footer-note { text-align: center; color: #9aa39d; font-size: 9px; margin-top: 17px; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 10; background: #15231bb3; display: none; place-items: center; padding: 18px; }
+    .modal-backdrop.open { display: grid; }
+    .modal { width: min(620px, 100%); max-height: 94vh; overflow: auto; background: #fff; border-radius: 13px; box-shadow: 0 20px 70px #10221645; }
+    .modal-head { padding: 19px 22px 14px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--line); }
+    .modal-head h2 { font-size: 17px; margin: 0; }
+    .modal-head p { color: var(--muted); font-size: 11px; margin: 5px 0 0; }
+    .close { background: none; border: 0; color: #78837b; font-size: 22px; }
+    .modal-body { padding: 18px 22px 22px; }
+    .consent { background: #f2f7f3; border-radius: 8px; padding: 11px 12px; display: flex; gap: 9px; color: #4d6253; font-size: 10px; line-height: 1.5; margin-bottom: 15px; }
+    .consent input { accent-color: var(--green); flex: 0 0 auto; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .field { display: grid; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 10px; font-weight: 650; color: #4d5a51; }
+    .field input, .field select, .field textarea { border: 1px solid var(--line); border-radius: 7px; padding: 9px 10px; background: white; font-size: 11px; color: var(--ink); }
+    .field textarea { resize: vertical; min-height: 74px; line-height: 1.45; }
+    .field .hint { color: #919c94; font-weight: 400; }
+    .triage-options { display: flex; flex-wrap: wrap; gap: 7px; }
+    .triage-options label { display: flex; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; font-weight: 500; font-size: 9px; cursor: pointer; }
+    .triage-options input { accent-color: var(--green); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+    .result { display: none; margin-top: 15px; border: 1px solid var(--line); border-radius: 9px; padding: 14px; }
+    .result.visible { display: block; }
+    .result h3 { margin: 0 0 9px; font-size: 12px; }
+    .result-bar { height: 7px; background: #eff1ee; border-radius: 5px; margin: 9px 0; }
+    .result-bar span { display: block; height: 100%; border-radius: 5px; background: var(--green); }
+    .result p { margin: 8px 0 0; font-size: 10px; color: #68736b; line-height: 1.5; }
+    .urgent-banner { display: none; background: var(--red-bg); color: #8e3636; padding: 10px; border-radius: 7px; font-size: 10px; line-height: 1.45; margin-top: 10px; }
+    .urgent-banner.visible { display: block; }
+    .toast { position: fixed; right: 20px; bottom: 20px; z-index: 15; background: #203a2c; color: white; border-radius: 8px; padding: 11px 15px; font-size: 11px; box-shadow: 0 8px 30px #17291d30; opacity: 0; transform: translateY(8px); pointer-events: none; transition: .2s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 1050px) {
+      .app { grid-template-columns: 205px minmax(0,1fr); }
+      .content { padding: 25px 22px 40px; }
+      .topbar { padding: 0 22px; }
+      .layout { grid-template-columns: minmax(0, 1.5fr) minmax(250px, .85fr); gap: 12px; }
+      .case { grid-template-columns: minmax(120px, 1.2fr) .68fr .6fr .7fr 18px; gap: 6px; padding-left: 12px; padding-right: 12px; }
+    }
+    @media (max-width: 780px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .topbar { height: 58px; padding: 0 16px; }
+      .content { padding: 22px 15px 34px; }
+      .layout { grid-template-columns: 1fr; }
+      .right-col { grid-template-columns: 1fr 1fr; align-items: start; }
+      .stats { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+      .stat { min-height: 95px; padding: 12px; }
+      .bottom-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      .welcome { align-items: flex-start; flex-direction: column; }
+      .welcome .primary { width: 100%; }
+      .right-col { grid-template-columns: 1fr; }
+      .case { grid-template-columns: minmax(100px, 1fr) 75px 68px 22px; }
+      .case .case-time { display: none; }
+      .filters { padding-left: 12px; padding-right: 12px; }
+      .panel-head { padding-left: 12px; padding-right: 12px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .modal-body { padding: 15px; }
+      .modal-head { padding: 16px 15px 12px; }
+      h1 { font-size: 22px; }
+      .demo-tag { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">T</div>
+        <div><div class="brand-name">TraumaSense</div><div class="brand-sub">VICTIM SUPPORT • NHAA 14566</div></div>
+      </div>
+      <div class="nav-label">Workspace</div>
+      <nav class="nav" aria-label="Main navigation">
+        <button class="active" type="button"><span class="nav-icon">▦</span>Overview</button>
+        <button type="button" data-message="The case queue is shown in the overview."><span class="nav-icon">▤</span>Case queue <span class="nav-count">4</span></button>
+        <button type="button" data-message="Support referrals are available from each case."><span class="nav-icon">♡</span>Interventions</button>
+        <button type="button" data-message="Reports are not available in this prototype."><span class="nav-icon">▥</span>Reports</button>
+      </nav>
+      <div class="nav-label" style="margin-top:28px">System</div>
+      <nav class="nav" aria-label="System navigation">
+        <button type="button" data-message="Settings are not available in this prototype."><span class="nav-icon">⚙</span>Settings</button>
+        <button type="button" data-message="Help content is not available in this prototype."><span class="nav-icon">?</span>Help &amp; guidance</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="privacy-box">
+          <div class="privacy-title">◈ &nbsp;Privacy-first workspace</div>
+          <div class="privacy-copy">Demo data only. No case information is transmitted or stored. Use approved procedures for real cases.</div>
+        </div>
+        <div class="user">
+          <div class="avatar">AS</div>
+          <div><div class="user-name">Ananya Sharma</div><div class="user-role">Support counsellor</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div class="crumb">Workspace <span style="padding:0 7px;color:#adb5af">/</span> <strong>Overview</strong></div>
+        <div class="top-actions"><span class="demo-tag">DEMO ENVIRONMENT</span><button class="icon-btn" aria-label="Notifications" data-message="You're all caught up.">♧</button><div class="avatar" style="width:30px;height:30px">AS</div></div>
+      </header>
+      <div class="content">
+        <section class="welcome">
+          <div><h1>Good morning, Ananya</h1><div class="subtitle">A calm, informed first response can make a difference. Here's today's support overview.</div></div>
+          <button class="primary" id="newAssessment">＋ &nbsp;Start an assessment</button>
+        </section>
+
+        <section class="stats" aria-label="Today's overview">
+          <article class="stat"><div class="stat-head">Open cases <span class="stat-icon">▤</span></div><div class="stat-value" id="openCount">24</div><div class="stat-note"><span class="up">↑ 3</span> from yesterday</div></article>
+          <article class="stat"><div class="stat-head">Need prompt follow-up <span class="stat-icon" style="background:#fff3e9;color:#bd702f">⌁</span></div><div class="stat-value">6</div><div class="stat-note">High or critical priority</div></article>
+          <article class="stat"><div class="stat-head">Referred to support <span class="stat-icon" style="background:#eef4fb;color:#4c79a3">♡</span></div><div class="stat-value">18</div><div class="stat-note">Counselling, legal &amp; medical</div></article>
+          <article class="stat"><div class="stat-head">Median first response <span class="stat-icon" style="background:#f5f1fb;color:#7d63a8">◷</span></div><div class="stat-value">4<span style="font-size:15px">m</span> 32<span style="font-size:15px">s</span></div><div class="stat-note">Across today's contacts</div></article>
+        </section>
+
+        <div class="layout">
+          <section class="panel">
+            <div class="panel-head">
+              <div><div class="panel-title">Recent assessments</div><div class="panel-desc">Review context and coordinate a human-led response</div></div>
+              <button class="secondary" id="exportButton">Export view</button>
+            </div>
+            <div class="filters">
+              <label class="search"><span>⌕</span><input id="searchInput" type="search" placeholder="Search case ID or channel…" aria-label="Search cases"></label>
+              <select id="riskFilter" aria-label="Filter by risk"><option value="all">All risk levels</option><option>Critical</option><option>High</option><option>Moderate</option><option>Low</option></select>
+            </div>
+            <div class="case-list" id="caseList" aria-live="polite"></div>
+          </section>
+
+          <div class="right-col">
+            <section class="panel">
+              <div class="panel-head"><div><div class="panel-title">Selected case</div><div class="panel-desc">Consent-based, human-reviewed summary</div></div><button class="dots" aria-label="More options" data-message="More case actions are not available in this demo.">•••</button></div>
+              <div class="selected-card" id="selectedCard"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><div><div class="panel-title">Suggested next steps</div><div class="panel-desc">Confirm needs directly with the person</div></div></div>
+              <div class="actions" id="actionList"></div>
+            </section>
+          </div>
+        </div>
+
+        <div class="bottom-grid">
+          <section class="panel">
+            <div class="panel-head"><div><div class="panel-title">Intake channels</div><div class="panel-desc">Today's contacts by channel</div></div><span style="color:#929c95;font-size:10px">Today</span></div>
+            <div class="channel-list">
+              <div class="channel"><span>Helpline 14566</span><div class="bar"><span style="width:78%"></span></div><b>42</b></div>
+              <div class="channel"><span>Integrated portal</span><div class="bar"><span style="width:53%"></span></div><b>28</b></div>
+              <div class="channel"><span>Mobile app</span><div class="bar"><span style="width:34%"></span></div><b>18</b></div>
+              <div class="channel"><span>Chatbot</span><div class="bar"><span style="width:26%"></span></div><b>14</b></div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><div class="panel-title">Follow-up reminders</div><div class="panel-desc">Items for the support team</div></div><button class="dots" aria-label="More reminders" data-message="All reminders are visible in this demo.">•••</button></div>
+            <div class="notice-list">
+              <div class="notice"><span class="notice-mark" style="background:#bd4c45"></span><div><div class="notice-text"><strong>Immediate safety check</strong> — confirm safe contact method for case TS-24081.</div><div class="notice-time">Due now · Assigned to you</div></div></div>
+              <div class="notice"><span class="notice-mark"></span><div><div class="notice-text"><strong>Counselling referral</strong> — check availability in the person's preferred language.</div><div class="notice-time">Due in 30 min · District support team</div></div></div>
+              <div class="notice"><span class="notice-mark" style="background:#6e91b3"></span><div><div class="notice-text"><strong>Legal aid follow-up</strong> — confirm whether a referral is wanted.</div><div class="notice-time">Today · Unassigned</div></div></div>
+            </div>
+          </section>
+        </div>
+        <div class="footer-note">TraumaSense AI is a decision-support prototype, not a diagnostic tool. Human judgement and the person's wishes always come first.</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="assessmentModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-head"><div><h2 id="modalTitle">Start a support assessment</h2><p>Use a calm, conversational approach. The person may pause or stop at any time.</p></div><button class="close" id="closeModal" aria-label="Close assessment">×</button></div>
+      <form class="modal-body" id="assessmentForm">
+        <div class="consent"><input type="checkbox" id="consent" required><label for="consent">I have explained the purpose of this assessment and obtained informed consent. I will record only information necessary for support.</label></div>
+        <div class="form-grid">
+          <div class="field"><label for="caseId">Case reference <span class="hint">(non-identifying)</span></label><input id="caseId" placeholder="e.g. TS-24102" required maxlength="24"></div>
+          <div class="field"><label for="channel">Contact channel</label><select id="channel"><option>Helpline 14566</option><option>Integrated portal</option><option>Mobile app</option><option>Chatbot</option><option>IVRS</option></select></div>
+          <div class="field"><label for="language">Preferred language</label><select id="language"><option>Hindi</option><option>English</option><option>मराठी (Marathi)</option><option>தமிழ் (Tamil)</option><option>తెలుగు (Telugu)</option><option>বাংলা (Bengali)</option><option>ಕನ್ನಡ (Kannada)</option><option>ગુજરાતી (Gujarati)</option><option>Other / interpreter requested</option></select></div>
+          <div class="field"><label for="distress">Self-reported distress <span class="hint">(0 = none, 10 = extreme)</span></label><input id="distress" type="number" min="0" max="10" value="5" required></div>
+          <div class="field full"><label for="narrative">What would you like support with? <span class="hint">Use the person's own words where possible</span></label><textarea id="narrative" placeholder="Brief, factual notes only. Avoid unnecessary identifying details."></textarea></div>
+          <div class="field full"><label>Immediate support indicators <span class="hint">Select only if disclosed or observed; verify with the person</span></label>
+            <div class="triage-options">
+              <label><input type="checkbox" name="indicator" value="danger"> Immediate danger</label>
+              <label><input type="checkbox" name="indicator" value="selfharm"> Thoughts of self-harm</label>
+              <label><input type="checkbox" name="indicator" value="threat"> Threats / intimidation</label>
+              <label><input type="checkbox" name="indicator" value="isolation"> No safe support nearby</label>
+              <label><input type="checkbox" name="indicator" value="medical"> Urgent medical need</label>
+            </div>
+          </div>
+        </div>
+        <div class="result" id="assessmentResult" aria-live="polite"></div>
+        <div class="urgent-banner" id="urgentBanner"><strong>Prioritize a live, human-led safety response.</strong> Stay connected if safe, follow approved emergency protocols, and ask what support the person wants. This prototype does not contact emergency services.</div>
+        <div class="modal-actions"><button type="button" class="secondary" id="cancelAssessment">Cancel</button><button type="submit" class="primary">Assess support needs</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    const cases = [
+      { id: "TS-24081", label: "Complainant · Adult", channel: "Helpline 14566", time: "2 min ago", score: 91, risk: "Critical", language: "Hindi", initials: "C1", summary: "Person reports immediate fear for their safety and difficulty returning home. A live safety check is the priority.", actions: [{ title: "Confirm immediate safety & safe contact method", note: "Stay connected and follow local emergency protocol.", priority: "NOW" }, { title: "Offer emergency police support", note: "Ask permission; follow approved escalation process.", priority: "URGENT" }, { title: "Offer trauma-informed counselling", note: "Arrange a qualified counsellor when the person is safe.", priority: "TODAY" }] },
+      { id: "TS-24076", label: "Complainant · Adult", channel: "Integrated portal", time: "18 min ago", score: 74, risk: "High", language: "Marathi", initials: "C2", summary: "Narrative indicates fear and reported intimidation. Verify current safety and the preferred way to follow up.", actions: [{ title: "Check whether it is safe to call back", note: "Agree on a safe time and method for contact.", priority: "TODAY" }, { title: "Offer legal aid referral", note: "Explain available options without pressure.", priority: "TODAY" }, { title: "Offer counselling support", note: "Ask whether a language-matched counsellor is preferred.", priority: "" }] },
+      { id: "TS-24068", label: "Complainant · Adult", channel: "Mobile app", time: "42 min ago", score: 48, risk: "Moderate", language: "Tamil", initials: "C3", summary: "Person describes ongoing worry related to a case. No immediate safety concern was recorded; ask what support feels useful.", actions: [{ title: "Ask what support would help most", note: "Respect their priorities and pace.", priority: "" }, { title: "Offer counselling information", note: "Referral only with consent.", priority: "" }] },
+      { id: "TS-24054", label: "Complainant · Adult", channel: "Chatbot", time: "1 hr ago", score: 26, risk: "Low", language: "Hindi", initials: "C4", summary: "No immediate distress indicators selected. Confirm understanding and offer a route back to support.", actions: [{ title: "Share support contact options", note: "Explain how to reconnect with NHAA support.", priority: "" }] }
+    ];
+    let selectedId = cases[0].id;
+    const riskClass = risk => "risk-" + risk.toLowerCase();
+    const caseList = document.getElementById("caseList");
+    function renderCases() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const risk = document.getElementById("riskFilter").value;
+      const filtered = cases.filter(item => (risk === "all" || item.risk === risk) && (item.id.toLowerCase().includes(query) || item.channel.toLowerCase().includes(query)));
+      caseList.innerHTML = filtered.length ? filtered.map(item => `<div class="case ${item.id === selectedId ? "selected" : ""}" role="button" tabindex="0" data-case="${item.id}" aria-label="View case ${item.id}, ${item.risk} risk">
+        <div><div class="case-name">${item.id}</div><div class="case-id">${item.label}</div></div>
+        <div class="case-meta">${item.channel}<small>${item.language}</small></div>
+        <div><span class="risk ${riskClass(item.risk)}">${item.risk}</span></div>
+        <div class="case-meta"><span class="score">${item.score}</span> / 100<small>${item.time}</small></div>
+        <button class="dots" aria-label="More options" data-message="More case actions are not available in this demo." type="button">•••</button>
+      </div>`).join("") : '<div style="padding:24px;text-align:center;color:#89938c;font-size:11px">No cases match your search.</div>';
+      caseList.querySelectorAll("[data-case]").forEach(row => {
+        row.addEventListener("click", event => {
+          if (event.target.closest("[data-message]")) return;
+          selectedId = row.dataset.case;
+          renderCases();
+          renderSelected();
+        });
+        row.addEventListener("keydown", event => {
+          if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectedId = row.dataset.case; renderCases(); renderSelected(); }
+        });
+      });
+    }
+    function renderSelected() {
+      const item = cases.find(entry => entry.id === selectedId) || cases[0];
+      document.getElementById("selectedCard").innerHTML = `<div class="selected-person"><div class="avatar">${item.initials}</div><div><div class="case-name">${item.id} <span class="risk ${riskClass(item.risk)}" style="margin-left:6px">${item.risk}</span></div><div class="person-label">${item.label} · ${item.channel}</div></div></div>
+        <div class="person-details"><div><div class="detail-label">Stress vulnerability index</div><div class="detail-value">${item.score} / 100</div></div><div><div class="detail-label">Preferred language</div><div class="detail-value">${item.language}</div></div><div><div class="detail-label">Last contact</div><div class="detail-value">${item.time}</div></div><div><div class="detail-label">Review status</div><div class="detail-value">Human review needed</div></div></div>
+        <div class="risk-summary"><div class="risk-summary-title">Assessment context <span>ⓘ</span></div><p>${item.summary}</p></div>`;
+      document.getElementById("actionList").innerHTML = item.actions.map((action, index) => `<label class="action-row"><input class="action-check" type="checkbox" aria-label="Mark ${action.title} complete" data-action="${item.id}-${index}"><span><span class="action-title">${action.title}</span><span class="action-note">${action.note}</span></span>${action.priority ? `<span class="action-priority">${action.priority}</span>` : ""}</label>`).join("");
+      document.querySelectorAll(".action-check").forEach(check => check.addEventListener("change", () => showToast(check.checked ? "Marked as complete for this demo." : "Step reopened.")));
+    }
+    document.getElementById("searchInput").addEventListener("input", renderCases);
+    document.getElementById("riskFilter").addEventListener("change", renderCases);
+    renderCases();
+    renderSelected();
+
+    const modal = document.getElementById("assessmentModal");
+    function openModal() { modal.classList.add("open"); document.getElementById("caseId").focus(); }
+    function closeModal() {
+      modal.classList.remove("open");
+      document.getElementById("assessmentForm").reset();
+      document.getElementById("assessmentResult").classList.remove("visible");
+      document.getElementById("urgentBanner").classList.remove("visible");
+      document.querySelector('#assessmentForm button[type="submit"]').textContent = "Assess support needs";
+      pendingAssessment = null;
+    }
+    document.getElementById("newAssessment").addEventListener("click", openModal);
+    document.getElementById("closeModal").addEventListener("click", closeModal);
+    document.getElementById("cancelAssessment").addEventListener("click", closeModal);
+    modal.addEventListener("click", event => { if (event.target === modal) closeModal(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape" && modal.classList.contains("open")) closeModal(); });
+    let pendingAssessment = null;
+    document.getElementById("assessmentForm").addEventListener("submit", event => {
+      event.preventDefault();
+      if (pendingAssessment) {
+        saveAssessment();
+        return;
+      }
+      const scoreInput = Number(document.getElementById("distress").value);
+      if (!Number.isInteger(scoreInput) || scoreInput < 0 || scoreInput > 10) {
+        document.getElementById("distress").setCustomValidity("Enter a whole number from 0 to 10.");
+        document.getElementById("distress").reportValidity();
+        return;
+      }
+      document.getElementById("distress").setCustomValidity("");
+      const indicators = [...document.querySelectorAll('input[name="indicator"]:checked')].map(input => input.value);
+      const narrative = document.getElementById("narrative").value.toLowerCase();
+      const urgent = indicators.some(value => ["danger", "selfharm", "medical"].includes(value)) || /suicid|kill myself|end my life/.test(narrative);
+      const score = Math.min(100, Math.round(scoreInput * 7 + indicators.length * 12 + (urgent ? 30 : 0)));
+      const risk = urgent || score >= 75 ? "Critical" : score >= 55 ? "High" : score >= 30 ? "Moderate" : "Low";
+      pendingAssessment = {
+        id: document.getElementById("caseId").value.trim(),
+        channel: document.getElementById("channel").value,
+        language: document.getElementById("language").value,
+        score,
+        risk,
+        urgent
+      };
+      const result = document.getElementById("assessmentResult");
+      result.classList.add("visible");
+      result.innerHTML = `<h3>Support priority: <span class="risk ${riskClass(risk)}">${risk}</span> &nbsp; ${score}/100</h3><div class="result-bar"><span style="width:${score}%;background:${risk === "Critical" ? "#a83c3c" : risk === "High" ? "#c47b30" : "#508064"}"></span></div><p><strong>Heuristic demo only.</strong> This score is not a clinical assessment or validated model output. Review context with the person and use professional judgement. Risk labels do not replace a direct safety check.</p>`;
+      document.getElementById("urgentBanner").classList.toggle("visible", urgent);
+      event.currentTarget.querySelector('button[type="submit"]').textContent = "Save demo assessment";
+    });
+    document.getElementById("distress").addEventListener("input", event => event.currentTarget.setCustomValidity(""));
+    function saveAssessment() {
+      const assessment = pendingAssessment;
+      if (!assessment) return;
+      const newCase = { id: assessment.id, label: "Complainant · Adult", channel: assessment.channel, time: "Just now", score: assessment.score, risk: assessment.risk, language: assessment.language, initials: "N", summary: "New demo assessment. Confirm the person's immediate needs and preferred next step directly.", actions: assessment.urgent ? [{ title: "Confirm immediate safety & safe contact method", note: "Stay connected and follow approved emergency protocol.", priority: "NOW" }, { title: "Offer appropriate live support", note: "Ask permission and coordinate with the qualified team.", priority: "URGENT" }] : [{ title: "Confirm preferred support", note: "Ask the person what would be most helpful.", priority: "" }, { title: "Offer counselling or legal aid referral", note: "Proceed only with consent.", priority: "" }] };
+      const duplicateIndex = cases.findIndex(item => item.id.toLowerCase() === assessment.id.toLowerCase());
+      if (duplicateIndex >= 0) cases.splice(duplicateIndex, 1);
+      cases.unshift(newCase);
+      selectedId = newCase.id;
+      renderCases();
+      renderSelected();
+      closeModal();
+      document.getElementById("assessmentForm").reset();
+      document.getElementById("assessmentResult").classList.remove("visible");
+      document.getElementById("urgentBanner").classList.remove("visible");
+      pendingAssessment = null;
+      document.querySelector('#assessmentForm button[type="submit"]').textContent = "Assess support needs";
+      showToast("Demo assessment added. Nothing was sent or stored.");
+    }
+    document.getElementById("exportButton").addEventListener("click", () => {
+      const rows = [["Case reference", "Channel", "Language", "Risk", "SVI (demo)", "Last contact"], ...cases.map(item => [item.id, item.channel, item.language, item.risk, item.score, item.time])];
+      const csv = rows.map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url; link.download = "traumasense-demo-cases.csv"; link.click();
+      URL.revokeObjectURL(url);
+      showToast("Demo case list exported as CSV.");
+    });
+    let toastTimer;
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+    document.addEventListener("click", event => {
+      const trigger = event.target.closest("[data-message]");
+      if (trigger) showToast(trigger.dataset.message);
+    });
+  </script>
+</body>
+</html>
