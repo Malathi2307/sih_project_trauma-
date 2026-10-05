@@ -1,0 +1,12 @@
+{
+  "name": "traumasense-ai-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Demo-only full-stack TraumaSense support assessment prototype",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -299,7 +299,7 @@
       <form class="modal-body" id="assessmentForm">
         <div class="consent"><input type="checkbox" id="consent" required><label for="consent">I have explained the purpose of this assessment and obtained informed consent. I will record only information necessary for support.</label></div>
         <div class="form-grid">
-          <div class="field"><label for="caseId">Case reference <span class="hint">(non-identifying)</span></label><input id="caseId" placeholder="e.g. TS-24102" required maxlength="24"></div>
+          <div class="field"><label for="caseId">Case reference <span class="hint">(non-identifying)</span></label><input id="caseId" placeholder="e.g. TS-24102" required maxlength="24" pattern="[A-Za-z0-9][A-Za-z0-9_\x2d]{2,23}" title="Use 3–24 letters, numbers, dashes, or underscores."></div>
           <div class="field"><label for="channel">Contact channel</label><select id="channel"><option>Helpline 14566</option><option>Integrated portal</option><option>Mobile app</option><option>Chatbot</option><option>IVRS</option></select></div>
           <div class="field"><label for="language">Preferred language</label><select id="language"><option>Hindi</option><option>English</option><option>मराठी (Marathi)</option><option>தமிழ் (Tamil)</option><option>తెలుగు (Telugu)</option><option>বাংলা (Bengali)</option><option>ಕನ್ನಡ (Kannada)</option><option>ગુજરાતી (Gujarati)</option><option>Other / interpreter requested</option></select></div>
           <div class="field"><label for="distress">Self-reported distress <span class="hint">(0 = none, 10 = extreme)</span></label><input id="distress" type="number" min="0" max="10" value="5" required></div>
@@ -349,6 +349,19 @@
           selectedId = row.dataset.case;
           renderCases();
           renderSelected();
+          fetch("/api/cases")
+            .then(response => {
+              if (!response.ok) throw new Error(`Case list request failed (${response.status}).`);
+              return response.json();
+            })
+            .then(data => {
+              if (!Array.isArray(data.cases)) throw new Error("The server returned an invalid case list.");
+              cases.splice(0, cases.length, ...data.cases);
+              selectedId = cases[0]?.id || "";
+              renderCases();
+              renderSelected();
+            })
+            .catch(error => console.info("Demo backend not connected; sample cases remain local to this page.", error));
         });
         row.addEventListener("keydown", event => {
           if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectedId = row.dataset.case; renderCases(); renderSelected(); }
@@ -406,6 +419,10 @@
         id: document.getElementById("caseId").value.trim(),
         channel: document.getElementById("channel").value,
         language: document.getElementById("language").value,
+        distress: scoreInput,
+        indicators,
+        textualUrgent: /suicid|kill myself|end my life/.test(narrative),
+        consent: document.getElementById("consent").checked,
         score,
         risk,
         urgent
@@ -417,23 +434,37 @@
       event.currentTarget.querySelector('button[type="submit"]').textContent = "Save demo assessment";
     });
     document.getElementById("distress").addEventListener("input", event => event.currentTarget.setCustomValidity(""));
-    function saveAssessment() {
+    async function saveAssessment() {
       const assessment = pendingAssessment;
       if (!assessment) return;
-      const newCase = { id: assessment.id, label: "Complainant · Adult", channel: assessment.channel, time: "Just now", score: assessment.score, risk: assessment.risk, language: assessment.language, initials: "N", summary: "New demo assessment. Confirm the person's immediate needs and preferred next step directly.", actions: assessment.urgent ? [{ title: "Confirm immediate safety & safe contact method", note: "Stay connected and follow approved emergency protocol.", priority: "NOW" }, { title: "Offer appropriate live support", note: "Ask permission and coordinate with the qualified team.", priority: "URGENT" }] : [{ title: "Confirm preferred support", note: "Ask the person what would be most helpful.", priority: "" }, { title: "Offer counselling or legal aid referral", note: "Proceed only with consent.", priority: "" }] };
-      const duplicateIndex = cases.findIndex(item => item.id.toLowerCase() === assessment.id.toLowerCase());
-      if (duplicateIndex >= 0) cases.splice(duplicateIndex, 1);
-      cases.unshift(newCase);
-      selectedId = newCase.id;
-      renderCases();
-      renderSelected();
+      const submitButton = document.querySelector('#assessmentForm button[type="submit"]');
+      submitButton.disabled = true;
+      try {
+        const response = await fetch("/api/assessments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(assessment)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || `Assessment request failed (${response.status}).`);
+        if (!data.assessment || typeof data.assessment.id !== "string") {
+          throw new Error("The server returned an invalid assessment.");
+        }
+        const savedCase = data.assessment;
+        const duplicateIndex = cases.findIndex(item => item.id.toLowerCase() === savedCase.id.toLowerCase());
+        if (duplicateIndex >= 0) cases.splice(duplicateIndex, 1);
+        cases.unshift(savedCase);
+        selectedId = savedCase.id;
+        renderCases();
+        renderSelected();
+      } catch (error) {
+        showToast(error.message || "Could not save assessment. Check that the demo server is running.");
+        return;
+      } finally {
+        submitButton.disabled = false;
+      }
       closeModal();
-      document.getElementById("assessmentForm").reset();
-      document.getElementById("assessmentResult").classList.remove("visible");
-      document.getElementById("urgentBanner").classList.remove("visible");
-      pendingAssessment = null;
-      document.querySelector('#assessmentForm button[type="submit"]').textContent = "Assess support needs";
-      showToast("Demo assessment added. Nothing was sent or stored.");
+      showToast("Demo assessment added to the server's temporary in-memory list.");
     }
     document.getElementById("exportButton").addEventListener("click", () => {
       const rows = [["Case reference", "Channel", "Language", "Risk", "SVI (demo)", "Last contact"], ...cases.map(item => [item.id, item.channel, item.language, item.risk, item.score, item.time])];
